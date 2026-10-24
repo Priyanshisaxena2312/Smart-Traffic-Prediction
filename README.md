@@ -1,5 +1,7 @@
 # 🚦 AURA-TM: Smart Traffic Prediction & Management
 
+LIVE LINK : http://smart-traffic-prediction-eta.vercel.app/
+
 **Autonomous Urban Routing & Adaptive Traffic Management (AURA-TM)** is a smart traffic prediction and decision-support system designed to analyze traffic conditions, forecast congestion, and generate actionable traffic advisories. Inspired by smart city initiatives, the platform combines vehicle counts, weather conditions, time-based traffic patterns, and historical congestion data to help improve urban mobility.
 
 The system provides an interactive traffic visualization dashboard, multi-horizon traffic projections, and statistical anomaly detection to support data-driven traffic management.
