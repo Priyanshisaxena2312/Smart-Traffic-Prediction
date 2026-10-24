@@ -1,0 +1,631 @@
+================================================================================
+AURA-TM: AUTONOMOUS URBAN ROUTING & ADAPTIVE TRAFFIC MANAGEMENT
+SMART CITY INTEGRATED COMMAND AND CONTROL CENTRE (ICCC) OPERATIONS PLATFORM
+COMPLETE SYSTEM ARCHITECTURE, MATHEMATICAL SPECIFICATION & TERMINOLOGY MANUAL
+================================================================================
+Document Reference : AURA-TM-DOC-2026-V1
+Classification     : Technical Documentation & Operator Glossary
+Target Corridor    : CORRIDOR-04-IT-EXPRESSWAY-MERGE
+Deployment Target  : Smart City Integrated Command and Control Centre (ICCC)
+System Version     : 2.4.0 (Deterministic Predictive Mobility Engine)
+Timestamp Baseline : 2026-10-23T18:15:00+05:30
+
+--------------------------------------------------------------------------------
+TABLE OF CONTENTS
+--------------------------------------------------------------------------------
+1. EXECUTIVE SUMMARY & SYSTEM MISSION
+2. SYSTEM ARCHITECTURE & DATA FLOW
+3. COMPLETE GLOSSARY OF TERMS & ABBREVIATIONS
+   3.1 Core System & Operational Acronyms (ICCC, AURA-TM, ATCS, VMS, CCTV, etc.)
+   3.2 Telemetry & Heterogeneous Fleet Terminology (PCU, 2W, 3W, 4W, LCV, HCV)
+   3.3 Road Geometry & Infrastructure Terminology
+   3.4 Environmental & Weather Parameters (WCM, Precipitation, Visibility)
+   3.5 Temporal Context & Calendar Modifiers (TPM, Horizons, Surge Window)
+   3.6 Traffic Flow Dynamics & Capacity Metrics (V/C, Effective V/C, LoS)
+   3.7 Statistical Anomaly Detection Metrics (CDI, Historical Baseline, Sigma)
+   3.8 Safety-Gate & Signal Actuation Constraints
+   3.9 Data Provenance Classification Tags
+4. MATHEMATICAL EVALUATION ENGINE (MODULES 1 TO 5)
+   4.1 Module 1: Heterogeneous Fleet PCU Conversion & Demand Normalization
+   4.2 Module 2: Environmental & Weather Capacity Adjustment
+   4.3 Module 3: Multi-Horizon Forecasting & Temporal Progression
+   4.4 Module 4: Statistical Anomaly Detection (Congestion Deviation Index)
+   4.5 Module 5: Level of Service (LoS) Classification
+5. TRAFFIC-CONTROL SAFETY GATE & COMMAND WITHHOLDING PROTOCOL
+6. OPERATIONAL SCENARIOS & REACTION PLAYBOOKS
+7. USER INTERFACE & DASHBOARD GUIDE
+8. MACHINE-TO-MACHINE (M2M) JSON INTERFACE SPECIFICATION
+9. HOW TO RUN & OPERATE THE APPLICATION LOCALLY
+
+================================================================================
+1. EXECUTIVE SUMMARY & SYSTEM MISSION
+================================================================================
+AURA-TM (Autonomous Urban Routing & Adaptive Traffic Management) is a deterministic,
+predictive mobility decision-support engine deployed within a Smart City Integrated
+Command and Control Centre (ICCC). 
+
+Modern urban expressways suffer from acute vulnerability to compounding disruptions:
+heterogeneous traffic fleet mixes, monsoon rainfall, localized waterlogging, and
+extreme peak commute surges. AURA-TM replaces ad-hoc human guesswork with an
+auditable, mathematically grounded forecasting engine.
+
+Core Directives:
+1. Multi-Variable Telemetry Ingestion: Continuously ingests 15-minute vehicle fleet
+   counts, weather sensor data, road surface reports, and historical baselines.
+2. Deterministic Demand Forecasting: Forecasts hourly traffic demand across rolling
+   horizons (T0, T+15m, T+30m, and T+60m) using calibrated temporal multipliers.
+3. Capacity Degradation Modeling: Dynamically throttles road capacity based on
+   micro-climatic precipitation and surface waterlogging telemetry.
+4. Statistical Anomaly Surveillance: Evaluates demand variance against historical
+   time-matched distributions using the Congestion Deviation Index (CDI).
+5. Safety-Gated Advisory Issuance: Operates strictly in ADVISORY_ONLY mode by
+   default, withholding physical traffic signal commands unless validated controller
+   safety timing constraints and authorization credentials are provided.
+
+================================================================================
+2. SYSTEM ARCHITECTURE & DATA FLOW
+================================================================================
+The AURA-TM system operates across four coordinated functional layers:
+
++------------------------------------------------------------------------------+
+| 1. SENSOR & TELEMETRY INGESTION LAYER                                        |
+| - ANPR Cameras: Vehicle license plate recognition & classification           |
+| - Dual Inductive Loops: Speed, occupancy, and magnetic signature consensus   |
+| - Weather Station: Precipitation rate (mm/hr), Visibility sensor (m)        |
+| - Field Incident Reports: Waterlogging, standing water, blockage alerts      |
++------------------------------------------------------------------------------+
+                                      |
+                                      v
++------------------------------------------------------------------------------+
+| 2. DETERMINISTIC CALCULATION ENGINE (AURA-TM CORE)                           |
+| - Module 1: Fleet PCU Conversion -> Normalized Hourly Demand (T0)            |
+| - Module 2: Weather Multiplier (WCM) -> Weather-Adjusted Effective Capacity  |
+| - Module 3: Temporal Multipliers (TPM) -> Scenario Forecasts (T+15, 30, 60)  |
+| - Module 4: Statistical Anomaly Detection -> Congestion Deviation Index (CDI)|
+| - Module 5: Level of Service (LoS A-F) & Oversaturation Regime Tagging       |
++------------------------------------------------------------------------------+
+                                      |
+                                      v
++------------------------------------------------------------------------------+
+| 3. SAFETY GATE & INTERLOCK VERIFICATION                                      |
+| - Controller Token Verification: Missing -> ADVISORY_ONLY Mode Enforced      |
+| - Conflict Matrix & Minimum Green Bounds: Missing -> Commands Withheld ([])  |
+| - Downstream Queue Storage Check: Null -> Suppress automated signal overrides|
++------------------------------------------------------------------------------+
+                                      |
+                                      v
++------------------------------------------------------------------------------+
+| 4. OPERATIONAL OUTPUT & DISPATCH CONSOLE                                     |
+| - Interactive HTML5 Corridor Visualizer: Animated vehicles, rain, puddles    |
+| - Real-time KPI Dashboard: Flow rate, Effective V/C, Anomaly Gauge, CCTV Feeds|
+| - Actionable Field Advisories: Emergency drainage pumps, police deployment   |
+| - Overhead VMS Signs: Dynamic driver rerouting & speed reduction messages    |
+| - Machine-to-Machine (M2M) JSON Feed: Direct real-time API for ICCC platforms |
++------------------------------------------------------------------------------+
+
+================================================================================
+3. COMPLETE GLOSSARY OF TERMS & ABBREVIATIONS
+================================================================================
+
+--------------------------------------------------------------------------------
+3.1 CORE SYSTEM & OPERATIONAL ACRONYMS
+--------------------------------------------------------------------------------
+* ICCC (Integrated Command and Control Centre):
+  The centralized nerve center of a modern smart city that integrates emergency
+  services, traffic mobility, municipal utilities, disaster management, and public
+  safety data into a single operational interface.
+
+* AURA-TM (Autonomous Urban Routing & Adaptive Traffic Management):
+  The decision-support and predictive engine that models traffic physics, detects
+  anomalies, and recommends traffic management plans.
+
+* ATCS (Adaptive Traffic Control System):
+  Computerized signal control software (e.g., SCATS, SCOOT, Sydney Coordinated
+  Adaptive Traffic System) that dynamically optimizes signal green split times,
+  offsets, and cycle lengths based on real-time detector inputs.
+
+* VMS (Variable Message Sign / Changeable Message Sign):
+  High-intensity LED matrix electronic message gantries suspended above highways
+  used to broadcast regulatory speeds, route divergence instructions, and hazard
+  warnings to approaching motorists.
+
+* CCTV (Closed-Circuit Television):
+  High-definition, pan-tilt-zoom (PTZ) optical cameras mounted along the corridor
+  providing video verification of queues, accidents, and waterlogging.
+
+* ANPR (Automatic Number Plate Recognition):
+  Optical cameras coupled with AI character recognition that identify vehicle
+  registration plates and classify vehicle types at highway speeds.
+
+* DRY_RUN / ADVISORY_ONLY:
+  A protected operational state where the algorithm executes all calculations and
+  generates advisories, but is mathematically barred from sending physical signal
+  override commands to field intersection controllers.
+
+--------------------------------------------------------------------------------
+3.2 TELEMETRY & HETEROGENEOUS FLEET TERMINOLOGY
+--------------------------------------------------------------------------------
+* Fleet Mix (Heterogeneous Traffic):
+  Traffic conditions typical of Indian and Asian cities where roads are shared by
+  wildly diverse vehicle types possessing radically different acceleration, braking,
+  dimensions, and maneuverability characteristics.
+
+* PCU (Passenger Car Unit / Passenger Car Equivalent - PCE):
+  A universal traffic engineering conversion metric that translates heterogeneous
+  vehicles into equivalent standard passenger cars. One passenger car equals 1.0 PCU.
+
+* 2W (Two-Wheelers - Motorcycles, Scooters, Mopeds):
+  Equivalent factor: 0.50 PCU/vehicle.
+  Highly agile, occupies minimal road surface, can filter between lanes, but easily
+  destabilized by wet asphalt and standing water.
+
+* 3W (Three-Wheelers - Auto-rickshaws, Tempo-rickshaws):
+  Equivalent factor: 0.80 PCU/vehicle.
+  Intermediate vehicle with low acceleration and top speed; acts as a localized
+  bottleneck during merge maneuvers.
+
+* 4W (Four-Wheelers - Passenger Cars, Cabs, Sedans, Hatchbacks, SUVs):
+  Equivalent factor: 1.00 PCU/vehicle.
+  The baseline reference passenger vehicle.
+
+* LCV (Light Commercial Vehicles - Delivery Vans, Mini-Trucks):
+  Equivalent factor: 1.50 PCU/vehicle.
+  Commercial freight vehicles with slower acceleration and higher road footprint.
+
+* HCV (Heavy Commercial Vehicles - Multi-Axle Freight Trucks, Transit Buses):
+  Equivalent factor: 3.00 PCU/vehicle.
+  Large commercial vehicles requiring extensive stopping distance, wide turning
+  sweeps, and substantial gap acceptance during merges.
+
+* 15-Minute Observation Interval:
+  The standard sampling time window (e.g., 18:00 to 18:15) used in advanced traffic
+  telemetry to balance responsiveness against high-frequency statistical noise.
+
+* Normalized Hourly Flow Rate (PCU/hr):
+  The flow rate computed by multiplying the 15-minute PCU total by four (4). This
+  standardizes demand onto an hourly scale for capacity comparison without falsely
+  claiming an entire hour of physical observation.
+
+--------------------------------------------------------------------------------
+3.3 ROAD GEOMETRY & INFRASTRUCTURE TERMINOLOGY
+--------------------------------------------------------------------------------
+* Corridor-04-IT-Expressway-Merge:
+  The specific urban highway link monitored by this dashboard, consisting of
+  three (3) continuous mainline expressway lanes and one (1) left-hand merging
+  slip lane connecting an IT business park.
+
+* Mainline Carriageway:
+  The primary through-lanes of the expressway carrying high-speed through traffic.
+
+* Slip Lane / Merging Slip Road:
+  An auxiliary deceleration/acceleration ramp allowing traffic from secondary
+  arterials or business parks to join the mainline without a stop-controlled junction.
+
+* Merge Gore / Chevron Marking:
+  The triangular painted neutral zone bordered by white pavement markings located
+  at the convergence of the slip lane and the mainline. Vehicles are legally
+  prohibited from driving over gore markings.
+
+* Upstream Roundabout:
+  A major circular intersection situated 1.2 kilometers upstream from the merge
+  point. When downstream expressway merges become congested, queues back up into
+  the roundabout, locking up perpendicular city arterials.
+
+--------------------------------------------------------------------------------
+3.4 ENVIRONMENTAL & WEATHER PARAMETERS
+--------------------------------------------------------------------------------
+* Precipitation Rate (mm/hr):
+  The volume of rain falling per unit time, measured by optical or acoustic rain
+  sensors.
+  - Clear / Dry : 0.0 mm/hr
+  - Light Rain  : 0.1 to 15.0 mm/hr
+  - Heavy Rain  : > 15.0 mm/hr (Monsoon downpour)
+
+* Horizontal Visibility (m):
+  The maximum distance (in meters) at which a prominent black object can be seen
+  and identified against the horizon. Heavy rain and fog reduce visibility,
+  compelling drivers to increase following headway.
+
+* Standing Water / Waterlogging:
+  Water accumulation on the road surface exceeding 15 mm in depth. Causes tire
+  hydroplaning, vehicle avoidance swerving, and lane abandonment.
+
+* WCM (Weather Capacity Multiplier):
+  A dimensionless reduction factor (0.55 to 1.00) applied to design capacity:
+  - 1.00 : Clear / Dry (Precipitation = 0 mm/hr, Visibility >= 1000 m)
+  - 0.88 : Light Rain / Mist (Precipitation 0.1-15.0 mm/hr, Visibility >= 500 m)
+  - 0.65 : Heavy Rain / Waterlogging (Precipitation > 15.0 mm/hr OR Standing Water)
+  - 0.55 : Dense Fog / Severe Storm (Visibility < 150 m)
+
+* Effective Capacity (PCU/hr):
+  The maximum hourly rate at which vehicles can traverse the roadway under prevailing
+  weather conditions. Calculated as: Base Design Capacity * WCM.
+
+--------------------------------------------------------------------------------
+3.5 TEMPORAL CONTEXT & CALENDAR MODIFIERS
+--------------------------------------------------------------------------------
+* Active Temporal Window:
+  Standardized time bands reflecting city commute rhythms:
+  1. Morning Peak Build-Up    (08:00 - 09:29) : Inbound commuter surge
+  2. Morning Peak Plateau     (09:30 - 10:59) : High sustained commute flow
+  3. Mid-Day Off-Peak         (11:00 - 16:59) : Normal steady commercial demand
+  4. Evening Peak Build-Up    (17:00 - 18:59) : Massive outbound employee departure
+  5. Evening Peak Dissipation (19:00 - 21:29) : Tapering return trips
+  6. Night Freight Window     (21:30 - 07:59) : Commercial heavy freight access
+
+* TPM (Temporal Progression Multiplier):
+  Dimensionless progression multipliers calibrated for horizons T+15m, T+30m, and
+  T+60m relative to base demand T0.
+
+* Rolling Horizons:
+  - T0    : Current time interval (e.g., 18:15:00)
+  - T+15m : Short-term outlook (18:30:00) - immediate tactical intervention horizon
+  - T+30m : Medium-term outlook (18:45:00) - peak queue buildup horizon
+  - T+60m : Extended outlook (19:15:00) - peak plateau / dissipation transition
+
+* Calendar / Surge Adjustment (+0.08):
+  An empirical uplift factor added to baseline TPMs when traffic is compounded by
+  weekend departure behavior or civic events.
+
+* Anti-Double Counting Rule:
+  Per Protocol B.3, if an input contains multiple overlapping qualifiers (such as
+  "Friday" AND "Pre-Weekend Outbound Surge"), the +0.08 adjustment is applied
+  strictly ONCE per horizon.
+
+--------------------------------------------------------------------------------
+3.6 TRAFFIC FLOW DYNAMICS & CAPACITY METRICS
+--------------------------------------------------------------------------------
+* Base V/C Ratio (Volume-to-Capacity):
+  Normalized demand divided by dry Base Design Capacity.
+
+* Effective V/C Ratio:
+  Normalized demand divided by Weather-Adjusted Effective Capacity. Indicates
+  true operational congestion pressure.
+
+* [OVERSATURATED_REGIME] (V/C > 1.00):
+  The operating condition where vehicle arrival rate exceeds departure service
+  rate. Vehicles accumulate in physical queues, travel speeds collapse, and flow
+  transitions to stop-and-go shockwaves.
+  IMPORTANT NOTE: V/C is a flow ratio, NOT physical road surface occupancy.
+
+* Upstream Roundabout Spillback Threshold (V/C > 1.15):
+  An empirical threshold for Corridor-04. When Effective V/C exceeds 1.15 under
+  heavy rain, queue propagation speed exceeds the clearance capacity of the
+  upstream roundabout, resulting in complete gridlock of the feeding road network.
+
+* LoS (Level of Service):
+  A standardized qualitative measure describing operational conditions within a
+  traffic stream, graded from LoS A (free flow) to LoS F (breakdown/oversaturation).
+
+--------------------------------------------------------------------------------
+3.7 STATISTICAL ANOMALY DETECTION METRICS
+--------------------------------------------------------------------------------
+* CDI (Congestion Deviation Index):
+  The statistical standard score (z-score) representing how many standard
+  deviations current demand deviates from time-matched historical expectations.
+
+* Historical Baseline Mean:
+  The average demand observed across identical days of the week and identical time
+  intervals over the preceding 6 to 12 months (e.g., Fridays 18:00 - 19:00).
+
+* Historical Standard Deviation (sigma):
+  The statistical dispersion of historical demand during the reference window.
+
+* Statistical Interpretation Thresholds:
+  - |CDI| < 1.00       : NORMAL_VARIATION
+  - 1.00 <= CDI <= 1.80: ELEVATED_DEMAND_ANOMALY
+  - CDI > 1.80         : SEVERE_POSITIVE_ANOMALY (Urgent field verification required)
+  - CDI < -1.00        : LOW_DEMAND_ANOMALY (Sensor dropout or upstream total blockage)
+
+--------------------------------------------------------------------------------
+3.8 SAFETY-GATE & SIGNAL ACTUATION CONSTRAINTS
+--------------------------------------------------------------------------------
+* Safety Gate:
+  An algorithmic interlock designed to prevent automated systems from actuating
+  physical signal hardware without validated safety constraints.
+
+* Authorized Commands Array (`"authorized_commands": []`):
+  The machine-to-machine payload field containing executable controller instructions.
+  In AURA-TM, this array is strictly empty whenever safety gates are armed.
+
+* Phase Split Timing Table:
+  The programmed distribution of green time percentages allocated to competing
+  movements within a traffic signal cycle.
+
+* Phase Conflict Matrix:
+  A safety-critical logic matrix that physically prevents conflicting vehicle
+  movements from receiving simultaneous green indications.
+
+* Minimum / Maximum Green Times:
+  Absolute hard bounds on green signal duration ensuring minimum pedestrian
+  clearance and preventing indefinite cycle hold.
+
+* Yellow Change & All-Red Clearance Intervals:
+  Mandatory safety intervals that clear the intersection conflict zone before
+  cross-street movements are permitted to proceed.
+
+* Downstream Storage Telemetry:
+  Real-time occupancy measurements of the exit link. If downstream space is full,
+  injecting additional green time causes "spillback gridlock".
+
+--------------------------------------------------------------------------------
+3.9 DATA PROVENANCE CLASSIFICATION TAGS
+--------------------------------------------------------------------------------
+Every piece of data in AURA-TM is tagged to prevent synthetic data pollution:
+* [MEASURED]                  : Directly obtained from physical sensors (e.g., ANPR, loops).
+* [CALCULATED]                : Deterministically computed using declared formulas.
+* [FORECAST]                  : Projected forward in time using temporal multipliers.
+* [IMPUTED]                   : Synthesized to replace missing/failed sensor inputs.
+* [DECLARED_STATIC_PARAMETER] : Fixed engineering reference value (e.g., base capacity).
+* [HISTORICAL_BASELINE]       : Derived from long-term historical log distributions.
+* [FIELD_REPORT]              : Submitted by on-ground patrols or emergency personnel.
+* [UNAVAILABLE]               : Missing, unmodeled, or withheld per safety protocol.
+
+================================================================================
+4. MATHEMATICAL EVALUATION ENGINE (MODULES 1 TO 5)
+================================================================================
+
+--------------------------------------------------------------------------------
+4.1 MODULE 1: FLEET PCU CONVERSION & DEMAND NORMALIZATION
+--------------------------------------------------------------------------------
+Input: 15-minute raw vehicle counts by class:
+  Count_2W  = 520 vehicles / 15 min [MEASURED]
+  Count_3W  = 140 vehicles / 15 min [MEASURED]
+  Count_4W  = 580 vehicles / 15 min [MEASURED]
+  Count_LCV = 44 vehicles / 15 min  [MEASURED]
+  Count_HCV = 38 vehicles / 15 min  [MEASURED]
+
+Formula 1: Current 15-Minute PCU Load
+  Current_15m_Load = (Count_2W * 0.50) + (Count_3W * 0.80) + (Count_4W * 1.00)
+                     + (Count_LCV * 1.50) + (Count_HCV * 3.00)
+  Substitution     = (520 * 0.50) + (140 * 0.80) + (580 * 1.00)
+                     + (44 * 1.50) + (38 * 3.00)
+                   = 260.0 + 112.0 + 580.0 + 66.0 + 114.0
+  Result           = 1132.0 PCU / 15 min [CALCULATED]
+
+Formula 2: Normalized Hourly Flow Rate (T0)
+  Normalized_Demand_T0 = Current_15m_Load * 4 (intervals / hr)
+                       = 1132.0 * 4
+  Result               = 4528.0 PCU/hr [CALCULATED]
+
+Formula 3: Unadjusted Base V/C Ratio (T0)
+  Unadjusted_Base_V_C = Normalized_Demand_T0 / Base_Design_Capacity
+                      = 4528.0 / 4200.0
+  Result              = 1.078095... -> 1.08 [CALCULATED]
+
+--------------------------------------------------------------------------------
+4.2 MODULE 2: ENVIRONMENTAL & WEATHER CAPACITY ADJUSTMENT
+--------------------------------------------------------------------------------
+Inputs:
+  Precipitation_Rate = 24.0 mm/hr [MEASURED]
+  Horizontal_Visibility = 320 m   [MEASURED]
+  Surface Condition  = Standing water on leftmost slip lane [FIELD_REPORT]
+
+Evaluation Rule:
+  Condition exceeds 15.0 mm/hr and standing water exists.
+  Applicable Multiplier: WCM = 0.65 [DECLARED_STATIC_PARAMETER]
+  Classification: Heavy Rain / Waterlogging
+
+Formula 4: Effective Capacity
+  Effective_Capacity = Base_Design_Capacity * WCM
+                     = 4200.0 * 0.65
+  Result             = 2730.0 PCU/hr [CALCULATED]
+  (Represents a 35% reduction in available corridor throughput)
+
+Formula 5: Effective V/C Ratio (T0)
+  Effective_V_C_T0 = Normalized_Demand_T0 / Effective_Capacity
+                   = 4528.0 / 2730.0
+  Result           = 1.658608... -> 1.66 [CALCULATED]
+
+--------------------------------------------------------------------------------
+4.3 MODULE 3: MULTI-HORIZON FORECASTING & TEMPORAL PROGRESSION
+--------------------------------------------------------------------------------
+Temporal Context:
+  Active Window: Evening Peak Build-Up (17:00 - 18:59)
+  Base TPMs:
+    T+15m = 1.15
+    T+30m = 1.28
+    T+60m = 1.20
+
+Single Calendar Adjustment Application (Protocol B.3):
+  Input conditions contain "Friday" and "Pre-Weekend Outbound Surge".
+  Calendar_Adjustment = +0.08 applied strictly ONCE per horizon.
+  Effective TPMs:
+    TPM_effective(T+15m) = 1.15 + 0.08 = 1.23 [CALCULATED]
+    TPM_effective(T+30m) = 1.28 + 0.08 = 1.36 [CALCULATED]
+    TPM_effective(T+60m) = 1.20 + 0.08 = 1.28 [CALCULATED]
+
+Demand Projections:
+  - T+15m (18:30:00+05:30):
+    Projected_Demand = 4528.0 * 1.23 = 5569.44 PCU/hr -> 5569.4 PCU/hr [FORECAST]
+    Effective_V_C    = 5569.44 / 2730.0 = 2.040087... -> 2.04 [CALCULATED]
+  - T+30m (18:45:00+05:30):
+    Projected_Demand = 4528.0 * 1.36 = 6158.08 PCU/hr -> 6158.1 PCU/hr [FORECAST]
+    Effective_V_C    = 6158.08 / 2730.0 = 2.255706... -> 2.26 [CALCULATED]
+  - T+60m (19:15:00+05:30):
+    Projected_Demand = 4528.0 * 1.28 = 5795.84 PCU/hr -> 5795.8 PCU/hr [FORECAST]
+    Effective_V_C    = 5795.84 / 2730.0 = 2.123018... -> 2.12 [CALCULATED]
+
+--------------------------------------------------------------------------------
+4.4 MODULE 4: STATISTICAL ANOMALY DETECTION (CDI)
+--------------------------------------------------------------------------------
+Historical Baseline Context (Fridays 18:00 - 19:00):
+  Historical_Mean_Demand = 3500.0 PCU/hr [HISTORICAL_BASELINE]
+  Historical_Std_Dev     = 280.0 PCU/hr  [HISTORICAL_BASELINE]
+
+Formula 6: Congestion Deviation Index (CDI / z-score)
+  Demand_Deviation = 4528.0 - 3500.0 = +1028.0 PCU/hr [CALCULATED]
+  CDI              = Demand_Deviation / Historical_Std_Dev
+                   = 1028.0 / 280.0
+  Result           = +3.671428... -> +3.67 sigma [CALCULATED]
+
+Classification:
+  Since CDI = +3.67 > 1.80, this triggers: SEVERE_POSITIVE_ANOMALY.
+  Interpretation: Demand is 3.67 standard deviations above the historical Friday
+  norm. This indicates severe unusual traffic concentration, requiring on-ground
+  field confirmation.
+
+--------------------------------------------------------------------------------
+4.5 MODULE 5: LEVEL OF SERVICE (LoS) CLASSIFICATION
+--------------------------------------------------------------------------------
+Standard Highway Capacity Manual (HCM) demand-to-capacity thresholds:
+- LoS A : Effective_V_C < 0.35          (Free-flow demand regime)
+- LoS B : 0.35 <= Effective_V_C <= 0.55 (Reasonably stable flow)
+- LoS C : 0.56 <= Effective_V_C <= 0.75 (Stable flow regime)
+- LoS D : 0.76 <= Effective_V_C <= 0.90 (Approaching unstable flow)
+- LoS E : 0.91 <= Effective_V_C <= 1.00 (Unstable / near-capacity)
+- LoS F : Effective_V_C > 1.00          (Oversaturated demand regime)
+
+Current Operational Grading:
+- T0    : Effective V/C = 1.66 -> LoS F [OVERSATURATED_REGIME]
+- T+15m : Effective V/C = 2.04 -> LoS F [OVERSATURATED_REGIME]
+- T+30m : Effective V/C = 2.26 -> LoS F [OVERSATURATED_REGIME]
+- T+60m : Effective V/C = 2.12 -> LoS F [OVERSATURATED_REGIME]
+
+Unmodeled Metrics Protocol:
+In accordance with Protocol B.5, since no calibrated speed-flow regression equation
+or queue storage measurement was provided:
+- Predicted Speed       = null [UNAVAILABLE]
+- Queue Length (meters) = null [UNAVAILABLE]
+- Congestion Percentage = null [UNAVAILABLE]
+- Confidence Interval   = null [UNAVAILABLE]
+
+================================================================================
+5. TRAFFIC-CONTROL SAFETY GATE & COMMAND WITHHOLDING PROTOCOL
+================================================================================
+Why Automated Signal Actuation Is Blocked:
+In an urban corridor, adjusting signal timing solely from corridor-level V/C
+is extremely hazardous. Without knowing lane-by-lane storage occupancy, extending
+mainline green times can pump vehicles directly into an already blocked bottleneck,
+causing intersection gridlock and blocking emergency vehicles.
+
+AURA-TM enforces strict command withholding:
+1. "authorized_commands" MUST remain an empty array: []
+2. Operating mode is permanently locked to "ADVISORY_ONLY / DRY_RUN"
+3. Executable signals can ONLY be unlocked when the input provides:
+   - Approved Signal Timing Sheet (Cycle length, phase splits)
+   - Verified Phase Conflict Matrix
+   - Minimum and Maximum Green bounds (preventing starvation)
+   - Yellow and All-Red clearance times
+   - Downstream queue storage telemetry
+   - Cryptographic Operator Authorization Token
+
+Instead of automated signal overrides, AURA-TM outputs prioritized human advisories:
+- Urgent Drainage Pump Team dispatch to clear standing water on the slip lane.
+- PTZ CCTV surveillance focused on upstream roundabout approaches to monitor spillback.
+- Dynamic VMS broadcast recommendations advising drivers to divert via Outer Ring Road.
+
+================================================================================
+6. OPERATIONAL SCENARIOS & REACTION PLAYBOOKS
+================================================================================
+The dashboard provides 5 built-in operational scenarios:
+
+1. Scenario 1: Live Incident - Oct 23, 18:15 (Rain + Outbound Surge) [DEFAULT]
+   - Conditions: 24 mm/hr rain, standing water on slip lane, Friday evening peak.
+   - Result: V/C = 1.66 climbing to 2.26 at T+30m. CDI = +3.67. Extreme gridlock.
+   - Action: Dispatch drainage suction pumps, broadcast VMS diversions, monitor roundabout.
+
+2. Scenario 2: T+15 Post-Drainage Intervention (Pumps Deployed)
+   - Conditions: Standing water cleared, rain down to 4 mm/hr, visibility 850 m.
+   - Result: WCM recovers to 0.88, Effective Capacity rises to 3,696 PCU/hr. V/C improves.
+   - Action: Maintain police merge patrol; monitor traffic dissipation.
+
+3. Scenario 3: Typical Tuesday Morning Peak (Dry / High Volume)
+   - Conditions: 0 mm/hr rain, 2000 m visibility, heavy car and bike volume.
+   - Result: Full 4,200 PCU/hr capacity. Controlled commute volume.
+
+4. Scenario 4: Mid-Day Off-Peak Steady State (LoS B)
+   - Conditions: Clear sunny weather, moderate traffic, V/C = 0.45.
+   - Result: Free flow; no active intervention required.
+
+5. Scenario 5: Night Freight Window (Heavy Commercial Dominance)
+   - Conditions: Midnight freight corridor, high percentage of HCVs and LCVs.
+   - Result: Heavy axle loadings, high PCU equivalent, low vehicle count.
+
+================================================================================
+7. USER INTERFACE & DASHBOARD GUIDE
+================================================================================
+The AURA-TM dashboard is organized into intuitive, high-density panels:
+
+TOP HEADER STRIP:
+- Brand Logo: "AURA-TM" with glowing cyber-cyan styling.
+- Preset Scenario Dropdown: Allows instant 1-click loading of operational scenarios.
+- Telemetry Status: Animated pulsing emerald indicator confirming sensor consensus.
+- ISO 8601 Live Clock: Real-time clock with explicit UTC+05:30 offset.
+
+CORRIDOR SCHEMATIC (HTML5 CANVAS):
+- Displays CORRIDOR-04 with 3 main lanes and the left merging slip lane.
+- Features real-time animated vehicles scaled and color-coded by class.
+- Dynamic particle rain simulation reflecting measured precipitation.
+- Animated standing water puddle on the slip lane with ripple waves.
+- Upstream roundabout on the left with glowing red spillback warning box when V/C > 1.15.
+- Dual Inductive Loop detection pulses and ANPR camera indicators.
+- Overhead VMS Gantries cycling between real-time driver advisory messages.
+
+KEY PERFORMANCE INDICATOR (KPI) CARDS:
+- KPI 1: Normalized Hourly Demand (PCU/hr) with vehicle count decomposition.
+- KPI 2: Effective Capacity (PCU/hr) with WCM indicator and capacity reduction percent.
+- KPI 3: Effective V/C Ratio with pulsing LoS badge (LoS F [OVERSATURATED]).
+- KPI 4: Congestion Deviation Index (CDI) with interactive needle arc gauge.
+
+LEFT PANEL (TELEMETRY CONTROLS):
+- Fleet Count Inputs: Numeric steppers for 2W, 3W, 4W, LCV, and HCV.
+- Weather Sliders: Interactive precipitation rate (0-60 mm/hr) and visibility (50-3000 m).
+- Standing Water Toggle: Checkbox toggling slip lane flooding.
+- Temporal Selectors: Dropdown for time windows, Friday toggle, and Pre-weekend surge toggle.
+
+RIGHT PANEL (OPERATIONS CONSOLE TABS):
+- Tab 1 [Projections]: Canvas bar chart comparing demand vs capacity + multi-horizon table.
+- Tab 2 [CCTV Feeds]: High-definition surveillance views of the slip lane and roundabout.
+- Tab 3 [Math Trace]: Transparent step-by-step formula substitutions and unit checks.
+- Tab 4 [Safety Gate]: Actionable buttons ("Dispatch Drainage", "Deploy Police") + audit logs.
+- Tab 5 [M2M JSON]: Syntax-highlighted JSON viewer with 1-click copy for API integration.
+
+================================================================================
+8. MACHINE-TO-MACHINE (M2M) JSON INTERFACE SPECIFICATION
+================================================================================
+The dashboard generates a strictly valid JSON payload for ingestion by smart city
+ICCC message brokers (e.g., Apache Kafka, MQTT, REST webhooks).
+
+Key Payload Schema Properties:
+- `system_id`           : System identifier string ("AURA-TM-DETERMINISTIC-ENGINE")
+- `version`             : Engine build version ("2.4.0")
+- `timestamp_iso8601`   : Observation timestamp with explicit timezone offset
+- `corridor_id`         : Standardized corridor ID ("CORRIDOR-04-IT-EXPRESSWAY-MERGE")
+- `safety_mode`         : Operating safety mode ("ADVISORY_ONLY / DRY_RUN")
+- `data_quality`        : Sensor health, validation checks, unmodeled attribute list
+- `forecast_assumptions`: Calibration status and justification for temporal adjustments
+- `model_limitations`   : Clear declaration of unmodeled metrics (speed, queue meters)
+- `telemetry_summary`   : Raw vehicle counts, environmental readings, historical baselines
+- `calculated_metrics_t0`: 15m load, normalized demand, capacities, V/C ratios, and LoS
+- `statistical_anomaly_evaluation`: CDI z-score, anomaly class, and interpretation
+- `forecast_horizons`   : Array of horizon projections (T+15m, T+30m, T+60m)
+- `recommended_advisories`: Prioritized operational guidance for field teams
+- `authorized_commands` : Mandatory empty array (`[]`) per safety gate protocol
+
+================================================================================
+9. HOW TO RUN & OPERATE THE APPLICATION LOCALLY
+================================================================================
+Prerequisites:
+- Node.js (v18.0.0 or higher recommended; project verified on v20.18.0)
+- Any modern web browser (Google Chrome, Microsoft Edge, Mozilla Firefox, Brave)
+
+Step 1: Open Terminal in the project directory:
+   cd "c:\Users\shrey\OneDrive\Desktop\smart traffic"
+
+Step 2: Start the Vite development server:
+   npm run dev
+
+Step 3: Open your web browser and navigate to:
+   http://localhost:5173/
+
+Step 4: Interact with the dashboard:
+- Switch scenarios using the top dropdown to see instant recalibration.
+- Adjust sliders (e.g., reduce precipitation to 0 or uncheck standing water) to see
+  immediate capacity recovery.
+- Click "Dispatch Emergency Drainage Pumps" on the Safety Gate tab to clear waterlogging.
+- Copy the raw M2M JSON payload for downstream smart city integrations.
+
+================================================================================
+END OF SPECIFICATION DOCUMENT
+================================================================================

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Traffic Management | ICCC Operations</title>
+  <meta name="description" content="Smart City Traffic Prediction Dashboard using Vehicle Counts, Weather, Time, and Historical Congestion Data.">
+  <link rel="stylesheet" href="/src/styles/main.css">
+</head>
+<body>
+
+  <!-- ICCC Top Navigation Bar -->
+  <header class="iccc-header">
+    <div class="brand-section">
+      <div class="brand-logo-badge">AURA-TM</div>
+      <div class="brand-titles">
+        <h1>SMART TRAFFIC MANAGEMENT</h1>
+        <div class="subtitle">CORRIDOR-04-IT-EXPRESSWAY-MERGE</div>
+      </div>
+    </div>
+
+    <div class="header-center-controls">
+      <div class="scenario-picker-wrapper">
+        <label for="scenario-select" class="scenario-label">SCENARIO:</label>
+        <select id="scenario-select" class="scenario-select"></select>
+      </div>
+    </div>
+
+    <div class="header-status-telemetry">
+      <div class="status-indicator-live">
+        <div class="pulse-dot"></div>
+        <span>LIVE TELEMETRY</span>
+      </div>
+      <div id="live-clock" class="live-clock-badge font-mono">18:15:00</div>
+    </div>
+  </header>
+
+  <!-- Main Dashboard Container -->
+  <main class="dashboard-container">
+
+    <!-- Corridor Live Visualizer & Schematic -->
+    <section class="corridor-view-card" aria-label="Corridor Visualizer">
+      <div class="corridor-canvas-wrapper">
+        <canvas id="corridor-canvas"></canvas>
+      </div>
+      <div class="corridor-card-footer">
+        <div class="corridor-meta-tags">
+          <span class="meta-tag">CORRIDOR: <strong>3 Main Lanes + 1 Left Merge Slip Lane</strong></span>
+          <span class="meta-tag">BASE CAPACITY: <strong>4,200 PCU/hr</strong></span>
+          <span class="meta-tag">SENSORS: <strong>Dual Loops + ANPR Consensus</strong></span>
+        </div>
+        <div class="corridor-vms-status text-cyan font-mono text-xs">
+          VMS-01 & VMS-02: ADVISORIES ACTIVE
+        </div>
+      </div>
+    </section>
+
+    <!-- Key Performance Indicators (KPIs) -->
+    <section class="kpi-cards-grid" aria-label="Key Performance Indicators">
+      
+      <!-- KPI 1: Normalized Demand -->
+      <article class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-title">Current Flow Rate (T0)</span>
+          <span class="kpi-icon">🚗</span>
+        </div>
+        <div class="kpi-value-row">
+          <span id="kpi-demand" class="kpi-main-value text-cyan">4528.0</span>
+          <span class="kpi-unit">PCU/hr</span>
+        </div>
+        <div class="kpi-footer">
+          <span class="text-muted text-xs">15-min observation × 4</span>
+          <span class="kpi-badge" style="background: rgba(0, 240, 255, 0.15); border-color: var(--cyan-primary); color: var(--cyan-primary);">NORMALIZED</span>
+        </div>
+      </article>
+
+      <!-- KPI 2: Effective Capacity -->
+      <article class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-title">Effective Capacity</span>
+          <span class="kpi-icon">🌧️</span>
+        </div>
+        <div class="kpi-value-row">
+          <span id="kpi-capacity" class="kpi-main-value text-amber">2730.0</span>
+          <span class="kpi-unit">PCU/hr</span>
+        </div>
+        <div class="kpi-footer">
+          <span id="kpi-wcm" class="text-xs text-amber font-mono">WCM: 0.65</span>
+          <span class="kpi-badge" style="background: rgba(245, 158, 11, 0.15); border-color: var(--amber-warning); color: var(--amber-warning);">-35% WEATHER</span>
+        </div>
+      </article>
+
+      <!-- KPI 3: Effective V/C Ratio -->
+      <article class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-title">Congestion Ratio (V/C)</span>
+          <span class="kpi-icon">⚠️</span>
+        </div>
+        <div class="kpi-value-row">
+          <span id="kpi-vc" class="kpi-main-value text-rose">1.66</span>
+          <span class="kpi-unit">ratio</span>
+        </div>
+        <div class="kpi-footer">
+          <span id="kpi-los-badge" class="kpi-badge">LoS F [OVERSATURATED]</span>
+          <span class="text-muted text-xs font-mono">Design: 1.08</span>
+        </div>
+      </article>
+
+      <!-- KPI 4: Statistical Anomaly CDI -->
+      <article class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-title">Anomaly Index (CDI)</span>
+          <span class="kpi-icon">📊</span>
+        </div>
+        <div class="kpi-value-row">
+          <span id="kpi-cdi" class="kpi-main-value text-rose">+3.67 σ</span>
+        </div>
+        <div class="kpi-footer">
+          <span id="kpi-cdi-badge" class="kpi-badge">SEVERE ANOMALY</span>
+          <div style="width: 70px; height: 35px;">
+            <canvas id="gauge-canvas"></canvas>
+          </div>
+        </div>
+      </article>
+
+    </section>
+
+    <!-- Operational Split Grid: Core Inputs (Left) vs Operations Console (Right) -->
+    <div class="operational-split-grid">
+      
+      <!-- Left Column: Core Telemetry Inputs (Problem Statement 04 Aligned) -->
+      <aside class="controls-panel" aria-label="Core Telemetry Inputs">
+        <div class="panel-header">
+          <h2 class="panel-title">🎛️ Prediction Inputs</h2>
+          <span class="text-xxs font-mono text-cyan">4 CORE PILLARS</span>
+        </div>
+
+        <!-- Pillar 1: Vehicle Counts -->
+        <div class="control-group">
+          <div class="group-title">
+            <span>1. Vehicle Counts (15-min)</span>
+            <span class="text-muted">Fleet Mix</span>
+          </div>
+          <div class="fleet-inputs-grid">
+            <div class="fleet-input-item">
+              <label for="input-count-4w">Cars (4W)</label>
+              <input type="number" id="input-count-4w" class="fleet-input-field" value="580" min="0" step="10">
+            </div>
+            <div class="fleet-input-item">
+              <label for="input-count-2w">Two-Wheelers (2W)</label>
+              <input type="number" id="input-count-2w" class="fleet-input-field" value="520" min="0" step="10">
+            </div>
+            <div class="fleet-input-item">
+              <label for="input-count-3w">Three-Wheelers (3W)</label>
+              <input type="number" id="input-count-3w" class="fleet-input-field" value="140" min="0" step="5">
+            </div>
+            <div class="fleet-input-item">
+              <label for="input-count-lcv">Light Commercial (LCV)</label>
+              <input type="number" id="input-count-lcv" class="fleet-input-field" value="44" min="0" step="2">
+            </div>
+            <div class="fleet-input-item" style="grid-column: span 2;">
+              <label for="input-count-hcv">Heavy Commercial / Buses (HCV)</label>
+              <input type="number" id="input-count-hcv" class="fleet-input-field" value="38" min="0" step="2">
+            </div>
+          </div>
+        </div>
+
+        <!-- Pillar 2: Weather -->
+        <div class="control-group">
+          <div class="group-title">
+            <span>2. Weather Conditions</span>
+            <span class="text-muted">Impact</span>
+          </div>
+
+          <div class="input-slider-row">
+            <div class="input-slider-header">
+              <label for="input-precip">Rainfall Intensity</label>
+              <span id="val-precip" class="val-display">24.0 mm/h</span>
+            </div>
+            <input type="range" id="input-precip" min="0" max="60" step="1" value="24">
+          </div>
+
+          <div class="toggle-switch-row">
+            <label class="switch-label" for="input-standing-water">
+              <input type="checkbox" id="input-standing-water" class="checkbox-custom" checked>
+              <span>Standing Water / Slip Lane Flooding</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Pillar 3: Time & Calendar Context -->
+        <div class="control-group">
+          <div class="group-title">
+            <span>3. Time Context</span>
+            <span class="text-muted">Commute Curve</span>
+          </div>
+
+          <div class="input-slider-row">
+            <label for="input-time-window" class="text-xs text-secondary">Active Peak Window</label>
+            <select id="input-time-window" class="fleet-input-field" style="width: 100%;">
+              <option value="morning_peak_buildup">Morning Peak (08:00 - 09:29)</option>
+              <option value="midday_offpeak">Mid-Day Off-Peak (11:00 - 16:59)</option>
+              <option value="evening_peak_buildup" selected>Evening Peak (17:00 - 18:59)</option>
+              <option value="night_freight">Night Freight (21:30 - 07:59)</option>
+            </select>
+          </div>
+
+          <div class="toggle-switch-row">
+            <label class="switch-label" for="input-is-friday">
+              <input type="checkbox" id="input-is-friday" class="checkbox-custom" checked>
+              <span>Friday Evening Surge (+0.08)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Pillar 4: Historical Congestion Data -->
+        <div class="control-group">
+          <div class="group-title">
+            <span>4. Historical Congestion Data</span>
+            <span class="text-muted">Baseline</span>
+          </div>
+          <div class="fleet-input-item">
+            <label for="input-hist-mean">Historical Mean Demand (PCU/hr)</label>
+            <input type="number" id="input-hist-mean" class="fleet-input-field" value="3500" min="500" step="50">
+          </div>
+          <p class="text-xxs text-muted" style="margin-top: 0.2rem;">Reference benchmark: Fridays 18:00 - 19:00 (Std Dev: 280 PCU/hr).</p>
+        </div>
+
+      </aside>
+
+      <!-- Right Column: Operations Console -->
+      <section class="console-panel" aria-label="Operations Console">
+        
+        <!-- Tab Navigation Bar -->
+        <nav class="console-tabs-bar" role="tablist">
+          <button class="tab-btn active" data-tab="projections" role="tab">📈 Forecast & Projections</button>
+          <button class="tab-btn" data-tab="safety" role="tab">🛡️ Safety Advisories</button>
+        </nav>
+
+        <!-- Tab Content Area -->
+        <div class="console-tab-content">
+
+          <!-- TAB 1: Multi-Horizon Projections & Trend Chart -->
+          <div id="tab-projections" class="tab-panel active">
+            
+            <div class="chart-container-box">
+              <div class="chart-header">
+                <span class="chart-title">Demand vs Weather-Adjusted Capacity Projection</span>
+                <span class="text-xs font-mono text-muted">Rolling Horizons: T0 → T+15m → T+30m → T+60m</span>
+              </div>
+              <canvas id="chart-canvas"></canvas>
+            </div>
+
+            <div style="overflow-x: auto;">
+              <table class="iccc-table">
+                <thead>
+                  <tr>
+                    <th>Horizon</th>
+                    <th>Time</th>
+                    <th>Forecast Demand</th>
+                    <th>Effective Cap</th>
+                    <th>V/C Ratio</th>
+                    <th>Level of Service</th>
+                    <th>Spillback Risk</th>
+                  </tr>
+                </thead>
+                <tbody id="projections-table-body">
+                  <!-- Dynamically populated by dashboard-ui.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB 2: Safety Gate & Advisory Console -->
+          <div id="tab-safety" class="tab-panel">
+            
+            <div class="safety-lock-banner">
+              <div class="safety-lock-icon">🔒</div>
+              <div id="gate-status-text">
+                <!-- Dynamically populated safety gate status -->
+              </div>
+            </div>
+
+            <div class="interactive-dispatch-bar">
+              <button id="btn-dispatch-drainage" class="btn-dispatch btn-critical">
+                <span>🚒</span> Dispatch Drainage Pumps
+              </button>
+              <button id="btn-dispatch-police" class="btn-dispatch btn-amber">
+                <span>👮</span> Deploy Traffic Police
+              </button>
+            </div>
+
+            <h3 class="panel-title" style="margin-bottom: 0.75rem;">📋 Active Safety Advisories</h3>
+            <div id="advisories-list" class="advisories-list">
+              <!-- Dynamically populated advisories -->
+            </div>
+
+            <h3 class="panel-title" style="margin-bottom: 0.5rem; font-size: 0.85rem;">📝 Operator Activity Log</h3>
+            <div id="action-log-feed" class="action-log-feed">
+              <div class="log-entry log-info">
+                <span class="log-time font-mono text-xs">[SYSTEM]</span>
+                <span class="log-msg text-xs">AURA-TM initialized in ADVISORY_ONLY mode. Safety gates armed.</span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+
+  </main>
+
+  <script type="module" src="/src/scripts/dashboard-ui.js"></script>
+</body>
+</html>

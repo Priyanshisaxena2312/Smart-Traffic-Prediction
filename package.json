@@ -1,0 +1,16 @@
+{
+  "name": "smart-traffic-iccc",
+  "version": "1.0.0",
+  "description": "AURA-TM: Smart City Integrated Command and Control Centre (ICCC) Traffic Operations Dashboard",
+  "scripts": {
+    "dev": "vite --host --port 5173",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": ["smart-city", "iccc", "traffic-management", "aura-tm", "mobility"],
+  "author": "AURA-TM Mobility Engine",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.4.10"
+  }
+}
